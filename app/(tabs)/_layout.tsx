@@ -5,26 +5,27 @@ import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, useColorScheme, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import Colors from "@/constants/colors";
+import { useAppSettings } from "@/context/AppSettingsContext";
 
 function NativeTabLayout() {
+  const { t } = useAppSettings();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
+        <Label>{t.home}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="capture">
         <Icon sf={{ default: "camera", selected: "camera.fill" }} />
-        <Label>Capture</Label>
+        <Label>{t.capture}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="matches">
         <Icon sf={{ default: "list.bullet.rectangle", selected: "list.bullet.rectangle.fill" }} />
-        <Label>Matches</Label>
+        <Label>{t.matches}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="export">
         <Icon sf={{ default: "square.and.arrow.up", selected: "square.and.arrow.up.fill" }} />
-        <Label>Export</Label>
+        <Label>{t.export}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -35,22 +36,23 @@ function ClassicTabLayout() {
   const isDark = colorScheme === "dark";
   const isWeb = Platform.OS === "web";
   const isIOS = Platform.OS === "ios";
+  const { colors, t } = useAppSettings();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.light.primary,
-        tabBarInactiveTintColor: Colors.light.tabIconDefault,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarLabelStyle: {
           fontFamily: 'Nunito_600SemiBold',
           fontSize: 11,
         },
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : isDark ? "#000" : Colors.light.white,
+          backgroundColor: isIOS ? "transparent" : isDark ? "#000" : colors.white,
           borderTopWidth: isWeb ? 1 : 0,
-          borderTopColor: Colors.light.border,
+          borderTopColor: colors.border,
           elevation: 0,
           ...(isWeb ? { height: 84 } : {}),
         },
@@ -62,14 +64,14 @@ function ClassicTabLayout() {
               style={StyleSheet.absoluteFill}
             />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.light.white }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.white }]} />
           ) : null,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t.home,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -78,7 +80,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="capture"
         options={{
-          title: "Capture",
+          title: t.capture,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="camera-outline" size={size} color={color} />
           ),
@@ -87,7 +89,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="matches"
         options={{
-          title: "Matches",
+          title: t.matches,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
           ),
@@ -96,7 +98,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="export"
         options={{
-          title: "Export",
+          title: t.export,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="share-outline" size={size} color={color} />
           ),

@@ -13,17 +13,18 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Colors from '@/constants/colors';
+import { useAppSettings } from '@/context/AppSettingsContext';
 import { useMatches } from '@/context/MatchContext';
 import { Player } from '@/lib/types';
+import { ThemeColors } from '@/constants/colors';
 
-function PlayerDetailRow({ player, index }: { player: Player; index: number }) {
+function PlayerDetailRow({ player, index, colors }: { player: Player; index: number; colors: ThemeColors }) {
   return (
-    <View style={styles.playerRow}>
-      <Text style={styles.playerIndex}>{index + 1}</Text>
-      <Text style={styles.playerName} numberOfLines={1}>{player.name}</Text>
-      <View style={styles.playerScoreBubble}>
-        <Text style={styles.playerScoreText}>{player.score}</Text>
+    <View style={[styles.playerRow, { borderBottomColor: colors.border + '60' }]}>
+      <Text style={[styles.playerIndex, { color: colors.textTertiary }]}>{index + 1}</Text>
+      <Text style={[styles.playerName, { color: colors.text }]} numberOfLines={1}>{player.name}</Text>
+      <View style={[styles.playerScoreBubble, { backgroundColor: colors.primaryLight }]}>
+        <Text style={[styles.playerScoreText, { color: colors.primary }]}>{player.score}</Text>
       </View>
     </View>
   );
@@ -34,31 +35,30 @@ export default function MatchDetailScreen() {
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getMatchById, removeMatch } = useMatches();
+  const { colors, t } = useAppSettings();
 
   const match = getMatchById(id || '');
 
   if (!match) {
     return (
       <LinearGradient
-        colors={[Colors.light.backgroundGradientStart, Colors.light.backgroundGradientEnd]}
+        colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]}
         style={styles.container}
       >
         <View style={[styles.topBar, { paddingTop: insets.top + webTopInset + 8 }]}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={Colors.light.text} />
+          <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
           </Pressable>
-          <Text style={styles.topTitle}>Match Details</Text>
+          <Text style={[styles.topTitle, { color: colors.text }]}>{t.matchDetails}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyState}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.light.textTertiary} />
-          <Text style={styles.emptyTitle}>Match not found</Text>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>{t.matchNotFound}</Text>
         </View>
       </LinearGradient>
     );
   }
-
-  const winner = match.teamA.totalScore >= match.teamB.totalScore ? match.teamA : match.teamB;
 
   const handleEdit = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -69,10 +69,10 @@ export default function MatchDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete Match', 'Are you sure you want to delete this match?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t.deleteMatch, t.deleteConfirm, [
+      { text: t.cancel, style: 'cancel' },
       {
-        text: 'Delete',
+        text: t.delete,
         style: 'destructive',
         onPress: async () => {
           await removeMatch(match.id);
@@ -85,16 +85,16 @@ export default function MatchDetailScreen() {
 
   return (
     <LinearGradient
-      colors={[Colors.light.backgroundGradientStart, Colors.light.backgroundGradientEnd]}
+      colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]}
       style={styles.container}
     >
       <View style={[styles.topBar, { paddingTop: insets.top + webTopInset + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.light.text} />
+        <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={styles.topTitle}>Match Details</Text>
-        <Pressable onPress={handleDelete} style={styles.deleteBtn}>
-          <Ionicons name="trash-outline" size={20} color={Colors.light.negative} />
+        <Text style={[styles.topTitle, { color: colors.text }]}>{t.matchDetails}</Text>
+        <Pressable onPress={handleDelete} style={[styles.deleteBtn, { backgroundColor: colors.negative + '12' }]}>
+          <Ionicons name="trash-outline" size={20} color={colors.negative} />
         </Pressable>
       </View>
 
@@ -104,7 +104,7 @@ export default function MatchDetailScreen() {
       >
         <View style={styles.heroCard}>
           <LinearGradient
-            colors={[Colors.light.primary, '#2D8A5E']}
+            colors={[colors.primary, colors.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroGradient}
@@ -115,7 +115,7 @@ export default function MatchDetailScreen() {
                 <Text style={styles.heroScore}>{match.teamA.totalScore}</Text>
               </View>
               <View style={styles.heroVs}>
-                <Text style={styles.heroVsText}>VS</Text>
+                <Text style={styles.heroVsText}>{t.vs}</Text>
               </View>
               <View style={styles.heroTeam}>
                 <Text style={styles.heroTeamName} numberOfLines={2}>{match.teamB.name}</Text>
@@ -129,7 +129,7 @@ export default function MatchDetailScreen() {
               </View>
               <View style={styles.heroMetaItem}>
                 <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.heroMetaText} numberOfLines={1}>{match.venue || 'Not specified'}</Text>
+                <Text style={styles.heroMetaText} numberOfLines={1}>{match.venue || 'N/A'}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -137,63 +137,63 @@ export default function MatchDetailScreen() {
 
         <View style={styles.statusRow}>
           {match.status === 'confirmed' ? (
-            <View style={[styles.statusBadge, { backgroundColor: Colors.light.primaryLight }]}>
-              <Ionicons name="checkmark-circle" size={14} color={Colors.light.primary} />
-              <Text style={[styles.statusBadgeText, { color: Colors.light.primary }]}>Confirmed</Text>
+            <View style={[styles.statusBadge, { backgroundColor: colors.primaryLight }]}>
+              <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
+              <Text style={[styles.statusBadgeText, { color: colors.primary }]}>{t.confirmed}</Text>
             </View>
           ) : (
-            <View style={[styles.statusBadge, { backgroundColor: Colors.light.accent + '30' }]}>
-              <Ionicons name="create" size={14} color={Colors.light.accentDark} />
-              <Text style={[styles.statusBadgeText, { color: Colors.light.accentDark }]}>Draft</Text>
+            <View style={[styles.statusBadge, { backgroundColor: colors.accent + '30' }]}>
+              <Ionicons name="create" size={14} color={colors.accentDark} />
+              <Text style={[styles.statusBadgeText, { color: colors.accentDark }]}>{t.draft}</Text>
             </View>
           )}
           {match.autoFilledFields.length > 0 && (
-            <View style={[styles.statusBadge, { backgroundColor: Colors.light.confidenceLow + '18' }]}>
-              <Ionicons name="flash" size={14} color={Colors.light.confidenceLow} />
-              <Text style={[styles.statusBadgeText, { color: Colors.light.confidenceLow }]}>
-                {match.autoFilledFields.length} Auto-filled
+            <View style={[styles.statusBadge, { backgroundColor: colors.confidenceLow + '18' }]}>
+              <Ionicons name="flash" size={14} color={colors.confidenceLow} />
+              <Text style={[styles.statusBadgeText, { color: colors.confidenceLow }]}>
+                {match.autoFilledFields.length} {t.autoFilled}
               </Text>
             </View>
           )}
         </View>
 
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card, shadowColor: colors.cardShadow }]}>
           <View style={styles.teamCardHeader}>
-            <Text style={styles.sectionTitle}>{match.teamA.name}</Text>
-            <View style={styles.teamTotalPill}>
-              <Text style={styles.teamTotalText}>{match.teamA.totalScore} pts</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{match.teamA.name}</Text>
+            <View style={[styles.teamTotalPill, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.teamTotalText, { color: colors.primary }]}>{match.teamA.totalScore} {t.pts}</Text>
             </View>
           </View>
           {match.teamA.players.map((player, idx) => (
-            <PlayerDetailRow key={idx} player={player} index={idx} />
+            <PlayerDetailRow key={idx} player={player} index={idx} colors={colors} />
           ))}
         </View>
 
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card, shadowColor: colors.cardShadow }]}>
           <View style={styles.teamCardHeader}>
-            <Text style={styles.sectionTitle}>{match.teamB.name}</Text>
-            <View style={styles.teamTotalPill}>
-              <Text style={styles.teamTotalText}>{match.teamB.totalScore} pts</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{match.teamB.name}</Text>
+            <View style={[styles.teamTotalPill, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.teamTotalText, { color: colors.primary }]}>{match.teamB.totalScore} {t.pts}</Text>
             </View>
           </View>
           {match.teamB.players.map((player, idx) => (
-            <PlayerDetailRow key={idx} player={player} index={idx} />
+            <PlayerDetailRow key={idx} player={player} index={idx} colors={colors} />
           ))}
         </View>
 
-        <View style={styles.watermarkCard}>
-          <Ionicons name="shield-checkmark-outline" size={16} color={Colors.light.primary} />
-          <Text style={styles.watermarkText}>Digitized by KhoKho Score</Text>
+        <View style={[styles.watermarkCard, { backgroundColor: colors.watermark, borderColor: colors.primary + '20' }]}>
+          <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+          <Text style={[styles.watermarkText, { color: colors.primary }]}>{t.digitizedBy}</Text>
         </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 16) }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 16), backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <Pressable
-          style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.9 }]}
+          style={({ pressed }) => [styles.editBtn, { borderColor: colors.primary }, pressed && { opacity: 0.9 }]}
           onPress={handleEdit}
         >
-          <Feather name="edit-3" size={18} color={Colors.light.primary} />
-          <Text style={styles.editBtnText}>Edit</Text>
+          <Feather name="edit-3" size={18} color={colors.primary} />
+          <Text style={[styles.editBtnText, { color: colors.primary }]}>{t.edit}</Text>
         </Pressable>
       </View>
     </LinearGradient>
@@ -213,20 +213,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: Colors.light.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   topTitle: {
     fontSize: 17,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.text,
   },
   deleteBtn: {
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: Colors.light.negative + '12',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -253,14 +250,14 @@ const styles = StyleSheet.create({
   heroTeamName: {
     fontSize: 15,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.white,
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 6,
   },
   heroScore: {
     fontSize: 36,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.white,
+    color: '#FFFFFF',
   },
   heroVs: {
     width: 40,
@@ -313,11 +310,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
   },
   sectionCard: {
-    backgroundColor: Colors.light.card,
     borderRadius: 22,
     padding: 18,
     marginBottom: 16,
-    shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -332,10 +327,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.text,
   },
   teamTotalPill: {
-    backgroundColor: Colors.light.primaryLight,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -343,29 +336,24 @@ const styles = StyleSheet.create({
   teamTotalText: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.primary,
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border + '60',
   },
   playerIndex: {
     width: 24,
     fontSize: 12,
     fontFamily: 'Nunito_500Medium',
-    color: Colors.light.textTertiary,
   },
   playerName: {
     flex: 1,
     fontSize: 14,
     fontFamily: 'Nunito_500Medium',
-    color: Colors.light.text,
   },
   playerScoreBubble: {
-    backgroundColor: Colors.light.primaryLight,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -375,21 +363,21 @@ const styles = StyleSheet.create({
   playerScoreText: {
     fontSize: 13,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.primary,
   },
   watermarkCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     marginTop: 8,
-    opacity: 0.5,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   watermarkText: {
-    fontSize: 12,
-    fontFamily: 'Nunito_500Medium',
-    color: Colors.light.primary,
+    fontSize: 13,
+    fontFamily: 'Nunito_600SemiBold',
   },
   emptyState: {
     flex: 1,
@@ -400,18 +388,15 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontFamily: 'Nunito_600SemiBold',
-    color: Colors.light.textSecondary,
   },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.light.card,
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
   },
   editBtn: {
     flexDirection: 'row',
@@ -420,12 +405,10 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 28,
     borderWidth: 1.5,
-    borderColor: Colors.light.primary,
     paddingVertical: 14,
   },
   editBtnText: {
     fontSize: 15,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.primary,
   },
 });

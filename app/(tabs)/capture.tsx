@@ -14,13 +14,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import Colors from '@/constants/colors';
+import { useAppSettings } from '@/context/AppSettingsContext';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { colors, t } = useAppSettings();
 
   const pickImage = async (source: 'camera' | 'gallery') => {
     let result: ImagePicker.ImagePickerResult;
@@ -28,7 +29,7 @@ export default function CaptureScreen() {
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+        Alert.alert(t.permissionNeeded, t.cameraPermission);
         return;
       }
       result = await ImagePicker.launchCameraAsync({
@@ -38,7 +39,7 @@ export default function CaptureScreen() {
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Gallery permission is required to select photos.');
+        Alert.alert(t.permissionNeeded, t.galleryPermission);
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({
@@ -63,16 +64,16 @@ export default function CaptureScreen() {
 
   return (
     <LinearGradient
-      colors={[Colors.light.backgroundGradientStart, Colors.light.backgroundGradientEnd]}
+      colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]}
       style={styles.container}
     >
       <View style={[styles.content, { paddingTop: insets.top + webTopInset + 16 }]}>
-        <Text style={styles.title}>Capture Scoresheet</Text>
-        <Text style={styles.subtitle}>Take a photo or select from gallery</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t.captureScoresheet}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.takePhotoOrGallery}</Text>
 
         {selectedImage ? (
           <View style={styles.previewContainer}>
-            <View style={styles.imageWrapper}>
+            <View style={[styles.imageWrapper, { backgroundColor: colors.card, shadowColor: colors.cardShadow }]}>
               <Image
                 source={{ uri: selectedImage }}
                 style={styles.previewImage}
@@ -82,7 +83,7 @@ export default function CaptureScreen() {
                 style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
                 onPress={() => setSelectedImage(null)}
               >
-                <Ionicons name="close" size={18} color={Colors.light.white} />
+                <Ionicons name="close" size={18} color={colors.white} />
               </Pressable>
             </View>
 
@@ -96,20 +97,20 @@ export default function CaptureScreen() {
               disabled={isProcessing}
             >
               <LinearGradient
-                colors={[Colors.light.primary, '#2D8A5E']}
+                colors={[colors.primary, colors.primaryDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.processGradient}
               >
                 {isProcessing ? (
                   <>
-                    <ActivityIndicator color={Colors.light.white} size="small" />
-                    <Text style={styles.processText}>Processing...</Text>
+                    <ActivityIndicator color={colors.white} size="small" />
+                    <Text style={[styles.processText, { color: colors.white }]}>{t.processing}</Text>
                   </>
                 ) : (
                   <>
-                    <Feather name="zap" size={18} color={Colors.light.white} />
-                    <Text style={styles.processText}>Extract Data</Text>
+                    <Feather name="zap" size={18} color={colors.white} />
+                    <Text style={[styles.processText, { color: colors.white }]}>{t.extractData}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -118,36 +119,34 @@ export default function CaptureScreen() {
         ) : (
           <View style={styles.optionsContainer}>
             <Pressable
-              style={({ pressed }) => [styles.optionCard, pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] }]}
+              style={({ pressed }) => [styles.optionCard, { backgroundColor: colors.card, shadowColor: colors.cardShadow }, pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] }]}
               onPress={() => pickImage('camera')}
             >
-              <View style={[styles.optionIconWrap, { backgroundColor: Colors.light.primary + '15' }]}>
-                <Ionicons name="camera" size={36} color={Colors.light.primary} />
+              <View style={[styles.optionIconWrap, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name="camera" size={36} color={colors.primary} />
               </View>
-              <Text style={styles.optionTitle}>Take Photo</Text>
-              <Text style={styles.optionDesc}>Use your camera to capture the scoresheet</Text>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>{t.takePhoto}</Text>
+              <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{t.takePhotoDesc}</Text>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.optionCard, pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] }]}
+              style={({ pressed }) => [styles.optionCard, { backgroundColor: colors.card, shadowColor: colors.cardShadow }, pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] }]}
               onPress={() => pickImage('gallery')}
             >
-              <View style={[styles.optionIconWrap, { backgroundColor: Colors.light.accent + '25' }]}>
-                <Ionicons name="images" size={36} color={Colors.light.accentDark} />
+              <View style={[styles.optionIconWrap, { backgroundColor: colors.accent + '25' }]}>
+                <Ionicons name="images" size={36} color={colors.accentDark} />
               </View>
-              <Text style={styles.optionTitle}>From Gallery</Text>
-              <Text style={styles.optionDesc}>Select an existing scoresheet photo</Text>
+              <Text style={[styles.optionTitle, { color: colors.text }]}>{t.fromGallery}</Text>
+              <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{t.fromGalleryDesc}</Text>
             </Pressable>
           </View>
         )}
 
-        <View style={styles.tipsCard}>
-          <Ionicons name="bulb-outline" size={18} color={Colors.light.accentDark} />
+        <View style={[styles.tipsCard, { backgroundColor: colors.accent + '20' }]}>
+          <Ionicons name="bulb-outline" size={18} color={colors.accentDark} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.tipsTitle}>Tips for best results</Text>
-            <Text style={styles.tipsText}>
-              Place the scoresheet on a flat surface with good lighting. Avoid shadows and glare. Ensure all text is visible.
-            </Text>
+            <Text style={[styles.tipsTitle, { color: colors.text }]}>{t.tipsTitle}</Text>
+            <Text style={[styles.tipsText, { color: colors.textSecondary }]}>{t.tipsText}</Text>
           </View>
         </View>
       </View>
@@ -161,12 +160,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.text,
   },
   subtitle: {
     fontSize: 14,
     fontFamily: 'Nunito_400Regular',
-    color: Colors.light.textSecondary,
     marginTop: 4,
     marginBottom: 24,
   },
@@ -175,11 +172,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   optionCard: {
-    backgroundColor: Colors.light.card,
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -196,12 +191,10 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 17,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.text,
   },
   optionDesc: {
     fontSize: 13,
     fontFamily: 'Nunito_400Regular',
-    color: Colors.light.textSecondary,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -212,11 +205,9 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     flex: 1,
-    backgroundColor: Colors.light.card,
     borderRadius: 24,
     overflow: 'hidden',
     maxHeight: 400,
-    shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -253,10 +244,8 @@ const styles = StyleSheet.create({
   processText: {
     fontSize: 16,
     fontFamily: 'Nunito_700Bold',
-    color: Colors.light.white,
   },
   tipsCard: {
-    backgroundColor: Colors.light.accent + '20',
     borderRadius: 20,
     padding: 16,
     flexDirection: 'row',
@@ -266,12 +255,10 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 13,
     fontFamily: 'Nunito_600SemiBold',
-    color: Colors.light.text,
   },
   tipsText: {
     fontSize: 12,
     fontFamily: 'Nunito_400Regular',
-    color: Colors.light.textSecondary,
     marginTop: 2,
     lineHeight: 18,
   },

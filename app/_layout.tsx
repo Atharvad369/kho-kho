@@ -7,6 +7,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { MatchProvider } from "@/context/MatchContext";
+import { AppSettingsProvider } from "@/context/AppSettingsContext";
 import { useFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from "@expo-google-fonts/nunito";
 
 SplashScreen.preventAutoHideAsync();
@@ -31,6 +32,13 @@ function RootLayoutNav() {
       />
       <Stack.Screen
         name="match-detail"
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="settings"
         options={{
           headerShown: false,
           presentation: 'card',
@@ -61,9 +69,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView>
           <KeyboardProvider>
-            <MatchProvider>
-              <RootLayoutNav />
-            </MatchProvider>
+            <AppSettingsProvider>
+              <MatchProvider>
+                <RootLayoutNav />
+              </MatchProvider>
+            </AppSettingsProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>
       </QueryClientProvider>
