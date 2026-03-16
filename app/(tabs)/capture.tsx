@@ -15,13 +15,30 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useAppSettings } from '@/context/AppSettingsContext';
+import OpenCVValidator from '@/components/opencv';
+import { Asset } from 'expo-asset';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const webTopInset = Platform.OS === 'web' ? 67 : 0;
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [templateUri, setTemplateUri] = useState<string | null>(null);
   const { colors, t } = useAppSettings();
+
+  React.useEffect(() => {
+    // Pre-load the template image URI
+    (async () => {
+      try {
+        const asset = Asset.fromModule(require('@/assets/images/template.png'));
+        await asset.downloadAsync();
+        setTemplateUri(asset.localUri || asset.uri);
+      } catch (e) {
+        console.error("Failed to load template image", e);
+      }
+    })();
+  }, []);
 
   const pickImage = async (source: 'camera' | 'gallery') => {
     let result: ImagePicker.ImagePickerResult;
@@ -54,12 +71,40 @@ export default function CaptureScreen() {
   };
 
   const processImage = async () => {
-    if (!selectedImage) return;
-    setIsProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsProcessing(false);
-    router.push({ pathname: '/ocr-result', params: { imageUri: selectedImage } });
-    setSelectedImage(null);
+    if (!selectedImage || !templateUri) {
+      if (!templateUri) Alert.alert("Error", "Template image not loaded yet.");
+      return;
+    }
+    // Start the OpenCV validation process instead of jumping straight to OCR
+    setIsValidating(true);
+  };
+
+  const handleValidationComplete = (isValid: boolean, details: any) => {
+    console.log('=== OPENCV VALIDATION RESULT ===');
+    console.log('Is Valid:', isValid);
+    console.log('Details:', JSON.stringify(details, null, 2));
+    console.log('================================');
+    setIsValidating(false);
+    if (isValid) {
+      // Good scoresheet! Proceed to OCR
+      router.push({ pathname: '/ocr-result', params: { imageUri: selectedImage } });
+      setSelectedImage(null);
+    } else {
+      // Bad structure
+      Alert.alert(
+        "Invalid Scoresheet",
+        details?.message || "The captured image does not match the structure of a valid Kho-Kho scoresheet. Please take a clearer photo.",
+        [{ text: "Try Again" }]
+      );
+    }
+  };
+
+  const handleValidationError = (errorMsg: string) => {
+    console.error('=== OPENCV VALIDATION ERROR ===');
+    console.error('Error:', errorMsg);
+    console.error('===============================');
+    setIsValidating(false);
+    Alert.alert("Validation Error", errorMsg);
   };
 
   return (
@@ -139,6 +184,17 @@ export default function CaptureScreen() {
               <Text style={[styles.optionTitle, { color: colors.text }]}>{t.fromGallery}</Text>
               <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{t.fromGalleryDesc}</Text>
             </Pressable>
+          </View>
+        )}
+
+        {isValidating && selectedImage && templateUri && (
+          <View style={StyleSheet.absoluteFillObject}>
+            <OpenCVValidator
+              imageUri={selectedImage}
+              referenceUri={templateUri}
+              onValidationComplete={handleValidationComplete}
+              onError={handleValidationError}
+            />
           </View>
         )}
 
