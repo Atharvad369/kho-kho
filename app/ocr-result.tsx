@@ -20,8 +20,8 @@ function ConfidenceBadge({ value, colors }: { value: number; colors: ThemeColors
   const pct = Math.round(value * 100);
   const color =
     pct >= 85 ? colors.confidenceHigh :
-    pct >= 60 ? colors.confidenceMedium :
-    colors.confidenceLow;
+      pct >= 60 ? colors.confidenceMedium :
+        colors.confidenceLow;
 
   return (
     <View style={[styles.confidenceBadge, { backgroundColor: color + '18' }]}>

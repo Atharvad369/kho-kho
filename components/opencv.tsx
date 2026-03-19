@@ -331,21 +331,28 @@ export default function OpenCVValidator({ imageUri, referenceUri, onValidationCo
                 edgesCleanCaptured.delete();
                 edgesCleanRef.delete();
 
-                // --- FINAL WEIGHTED SCORE ---
-                // 50% histogram (most reliable) + 25% line detection + 25% structure
-                let finalScore = (histScore * 50) + (lineScore * 25) + (structureScore * 25);
+                // --- FINAL WEIGHTED SCORE & HARD MINIMUMS ---
+                // Reduce reliance on Histogram (white paper) and test actual structure
+                let finalScore = (histScore * 30) + (lineScore * 35) + (structureScore * 35);
 
-                let isValidScoresheet = finalScore > 45; // 45% threshold
+                // A real camera photo might fragment the table lines when applying edge detection, 
+                // meaning we detect fewer perfect, closed "rectangles" than the template (68). 
+                // However, the number of individual lines detected (700+) proves it's a dense grid.
+                let hasEnoughLines = totalLinesCaptured > 150;
+                let hasEnoughBoxes = rectCountCaptured >= 5; // Lowered from 20 due to camera noise fragmentation
+
+                let isValidScoresheet = hasEnoughLines && hasEnoughBoxes && (finalScore > 60);
 
                 console.log('=== OpenCV Validation Debug ===');
-                console.log('Histogram Correlation:', (histScore * 100).toFixed(2) + '%');
-                console.log('Line Score:', (lineScore * 100).toFixed(2) + '%');
+                console.log('Histogram Correlation (30% weight):', (histScore * 100).toFixed(2) + '%');
+                console.log('Line Score (35% weight):', (lineScore * 100).toFixed(2) + '%');
                 console.log('H-Lines / V-Lines (Captured):', hLinesCaptured, '/', vLinesCaptured);
                 console.log('Total Lines (Captured / Reference):', totalLinesCaptured, '/', totalLinesRef);
-                console.log('Structure Score:', (structureScore * 100).toFixed(2) + '%');
+                console.log('Structure Score (35% weight):', (structureScore * 100).toFixed(2) + '%');
                 console.log('Rect Count (Captured / Reference):', rectCountCaptured, '/', rectCountRef);
                 console.log('Final Weighted Score:', finalScore.toFixed(2) + '%');
-                console.log('Is Valid:', isValidScoresheet);
+                console.log('Passes Hard Minimums (Lines > 150 & Rects >= 5):', hasEnoughLines && hasEnoughBoxes);
+                console.log('Is Valid (Score > 60%):', isValidScoresheet);
                 console.log('===============================');
 
                 postMsg({
